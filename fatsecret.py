@@ -3,6 +3,7 @@ from rauth.service import OAuth1Service #see https://github.com/litl/rauth for m
 import shelve #for persistent caching of tokens, hashes,etc.
 import time
 import datetime
+from collections import defaultdict
 #get your consumer key and secret after registering as a developer here: https://oauth.withings.com/en/partner/add
 
 #FIXME add method to set default units and make it an optional argument to the constructor
@@ -114,24 +115,25 @@ class Fatsecret:
                 header_auth=False)
         return response.content
 
-    def food_entries_get_month(self,date=datetime.datetime.now()):
-        params={'method': 'food_entries.get_month','format':'json'}
-        params['date']=int(round(time.mktime(date.timetuple())/60/60/24))
-        response=self.oauth.get(
+    def food_entries_get(self,user,date=datetime.datetime.now()):
+        params={'method': 'food_entries.get','format':'json'}
+        session=self.init_session(user)
+        response=session.get(
                 'http://platform.fatsecret.com/rest/server.api',
-                params=params,
-                access_token=self.access_token,
-                access_token_secret=self.access_token_secret,
-                header_auth=False)
+                params=params)
 
-        print response.content
-        if response.content['month'].get('day'):
-            tmp=response.content['month']['day']
-        else:
-            #months without data will still contain a 'month' key, but not a 'day' key
-            tmp=None
+        result = response.json()
+        # if response.content['month'].get('day'):
+        #     tmp=response.content['month']['day']
+        # else:
+        #     #months without data will still contain a 'month' key, but not a 'day' key
+        #     tmp=None
         #result=[(i['carbohydrate'],i['fat'],i['protein'],i['calories'],i['date_int']) for i in tmp]
-        return tmp
+        food_entries = result['food_entries']['food_entry']
+        meals = [(i['food_entry_name'],i['meal']) for i in food_entries]
+        res = defaultdict(list)
+        for v, k in meals: res[k].append(v)
+        return res
 
 
     def saved_meals_get(self,user):

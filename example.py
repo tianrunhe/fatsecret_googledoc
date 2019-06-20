@@ -9,8 +9,10 @@ consumer_key=''
 consumer_secret=''
 
 fs=Fatsecret(consumer_key, consumer_secret)
-saved_meals=fs.saved_meals_get('tianrunhe')
-print saved_meals
+
+food_entries=fs.food_entries_get('tianrunhe')
+for key in food_entries.keys():
+    print key, ':', ', '.join(food_entries[key])
 # #for now, search expressions cannot contain spaces
 # result=fs.foods_search("Betty")
 # print result
